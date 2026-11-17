@@ -3,10 +3,6 @@
 > **A little clarity for your digital day.**  
 > A friendly, lightweight, privacy-first Digital Wellbeing desktop application for Windows.
 
-**Document set:** Product Blueprint v1.1 (Phase 0 Refined)  
-**Last updated:** 17 November 2026  
-**Status:** Product direction and official branding approved; Phase 0 ADRs established for technical specification refinement before implementation.
-
 ## 1. What is Timo?
 
 Timo helps people understand how they spend time on their Windows computer. It automatically tracks the foreground application, distinguishes active use from inactivity and system interruptions, identifies installed and standalone applications, categorizes them, and turns the resulting records into understandable daily, weekly, and monthly insights.
