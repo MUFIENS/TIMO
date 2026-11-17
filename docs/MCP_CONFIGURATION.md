@@ -27,6 +27,13 @@ During Phase 0 audit, `Context7`, `Playwright MCP`, and `GitHub MCP` were **not*
 3. Prepare **Playwright MCP** before UI testing (Phase 3/4).
 4. **GitHub MCP** remains optional; **Figma MCP** remains permanently excluded.
 
+### Stage A configuration update (2026-11-17)
+
+- **Context7 MCP (Active & Verified Live):** Configured workspace-scoped Antigravity plugin manifests at [`.agents/plugins/context7/plugin.json`](../.agents/plugins/context7/plugin.json) and [`.agents/plugins/context7/mcp_config.json`](../.agents/plugins/context7/mcp_config.json) using Antigravity's documented Streamable HTTP schema (`"mcpServers": { "context7": { "url": "https://mcp.context7.com/mcp" } }`). After reload, Antigravity registered server `context7_context7` (`resolve-library-id`, `query-docs` schemas generated under `%USERPROFILE%\.gemini\antigravity\mcp\context7_context7\`), and both `resolve-library-id` and `query-docs` were verified live via `call_mcp_tool` (returning `/tauri-apps/tauri`, `/tauri-apps/tauri-docs`, and official Tauri v2 Windows prerequisite docs).
+- **Global config preservation:** `%USERPROFILE%\.gemini\config\mcp_config.json` (`supabase`, `notion`, `shadcn`, `magicuidesign-mcp`) was left completely unmodified.
+- **Playwright MCP:** Deferred until pre-UI testing (Phase 3/4), consistent with `ADR-008`.
+- **GitHub MCP / Figma MCP:** GitHub MCP remains optional (`NOT` configured); Figma MCP remains permanently excluded.
+
 ### Optional: GitHub MCP
 
 Purpose: inspect issues, pull requests, branches, and repository context when a GitHub connection is available. Do not require it for local implementation.

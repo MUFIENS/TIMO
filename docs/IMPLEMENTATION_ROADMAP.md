@@ -6,13 +6,12 @@ Design the whole product, implement in stages, and keep each stage testable. Do 
 
 ## Phase 0 — Repository and toolchain foundation
 
-- Confirm documentation directory, establish Phase 0 ADRs (`docs/adr/ADR-001`..`008`), and align official branding (`Timo` — `A little clarity for your digital day.`).
+- Confirm documentation directory, establish Phase 0 ADRs (`docs/adr/ADR-001`..`008`), record owner-approved Phase 0 decisions, and align official branding (`Timo` — `A little clarity for your digital day.`).
 - Discover and apply relevant installed Antigravity skills (`docs/SKILL_UTILIZATION.md`).
-- Install missing host prerequisites (`rustc`/`cargo`, MSVC Build Tools, Context7 & Playwright MCPs) and create Tauri 2 + React + TypeScript project.
-- Configure lint, format, Rust tests, frontend tests, and CI where available.
-- Verify build on Windows 11.
+- Prepare staged host prerequisites (`ADR-008`): install Rust stable, Cargo, MSVC Build Tools, and Windows SDK before Phase 1; configure Context7 MCP for development; defer Playwright MCP to UI testing (Phase 3/4) and headless Blender + 3D service to Phase 5 (`ADR-007`).
+- Create Tauri 2 + React + TypeScript project, configure lint/format/test/build scripts, and verify build on Windows 11.
 
-**Exit gate:** clean project build, documented versions, owner confirmation on open Phase 0 policy items (`ADR-002`, `ADR-003`), no unverified skill claims.
+**Exit gate:** clean project build, documented versions, Phase 1 native prerequisites verified, no unverified skill claims.
 
 ## Phase 1 — Native tracking proof of concept
 
