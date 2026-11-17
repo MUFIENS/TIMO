@@ -35,8 +35,8 @@ Threats:
 ### Rust and process metadata (`ADR-006`)
 - Never execute a discovered EXE or invoke `LoadLibrary` / shell icon handlers for identification or icon extraction; read PE `.rsrc` / version bytes strictly as read-only data.
 - Do not build shell command strings from file paths or metadata.
-- Normalize and validate paths (including NT device paths from `NtQuerySystemInformation(SystemProcessIdInformation)`).
-- Never request UAC elevation when `OpenProcess` returns `ERROR_ACCESS_DENIED`; use safe no-handle fallback (`SystemProcessIdInformation` / `Toolhelp32`) and record partial evidence.
+- Normalize and validate paths defensively using documented Windows APIs.
+- Never request UAC elevation when `OpenProcess` returns `ERROR_ACCESS_DENIED`; prioritize documented Win32 fallback APIs (`CreateToolhelp32Snapshot` / `WTSEnumerateProcessesW`) and do not rely on undocumented `NtQuerySystemInformation` as a primary dependency (`ADR-006`).
 - Treat file descriptions, publisher strings, manifests, and package names as untrusted text.
 - Handle access-denied and malformed metadata safely.
 

@@ -1,7 +1,7 @@
 # ADR-006: Application Identity, Elevated/UWP Resolution, Icon Caching & Crash Recovery
 
 **Date:** 2026-11-17  
-**Status:** Recommended  
+**Status:** Approved (Documented Windows API priority constraint) / Recommended (Identity keys, icon cache & crash checkpoint implementation details)  
 **Owners:** Windows Systems Engineering, Application Recognition Engineering, Security Engineering  
 
 ---
@@ -21,26 +21,30 @@ Several critical edge cases lacked concrete engineering rules across `TRACKING_E
 
 ## 3. Options Considered
 
-1. **Identity fallback:** Drop `ERROR_ACCESS_DENIED` windows vs query process image name without handle open (`NtQuerySystemInformation(SystemProcessIdInformation)` / Toolhelp32 snapshot).
-2. **PE & Icon extraction:** `Shell`/`LoadLibrary` vs pure read-only byte parsing (`LOAD_LIBRARY_AS_DATAFILE` or pure-Rust PE resource parser) into a local PNG cache.
+1. **Identity fallback on `ERROR_ACCESS_DENIED`:**
+   - Option 1A: Request UAC elevation for Timo (Rejected: excessive privilege and security risk).
+   - Option 1B: Use undocumented native `NtQuerySystemInformation(SystemProcessIdInformation)` as primary fallback (Rejected per owner constraint: potential future Windows compatibility risk).
+   - Option 1C: **Prioritize documented Windows APIs (`CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)` / `WTSEnumerateProcessesW`)** to retrieve executable basename when `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` returns `ERROR_ACCESS_DENIED`, recording partial identity cleanly without elevation.
+2. **PE & Icon extraction:** `Shell`/`LoadLibrary` vs pure read-only byte parsing (`LOAD_LIBRARY_AS_DATAFILE` or pure-Rust PE `.rsrc` resource parser) into a local PNG cache.
 3. **Crash checkpoint:** Periodic WAL update (`last_checkpoint_utc`) vs keeping `ended_at_utc = NULL` without heartbeat (loses duration on crash).
 
 ## 4. Technical Trade-offs
 
-- **No-Handle Elevated Image Lookup:** `NtQuerySystemInformation` class `0x58` (`SystemProcessIdInformation`) and `CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)` can retrieve executable paths/basenames for elevated PIDs without elevating Timo or opening invasive process handles. Note that `SystemProcessIdInformation` returns NT device paths (`\Device\HarddiskVolume...`) which require safe volume-to-DOS prefix normalization without trusting path text, and `SystemProcessIdInformation` is a native `ntdll.dll` interface whose fallback should be `CreateToolhelp32Snapshot` (`szExeFile` basename) + partial evidence record.
+- **Documented Win32 Fallback (`CreateToolhelp32Snapshot` / `WTSEnumerateProcessesW`):** Both APIs are official documented Windows APIs that return process image basenames (`szExeFile` / `pProcessName`) across elevated/protected processes **without calling `OpenProcess`** and without depending on undocumented `ntdll` structs (`NtQuerySystemInformation`). Their trade-off is exposing only the executable basename rather than the full filesystem path when `OpenProcess` is denied, which is completely acceptable for Timo's foreground tracking and partial-evidence model (and preserves path privacy).
 - **Read-Only PE Inspection:** Parsing PE `.rsrc` sections directly from read-only file bytes in Rust (or strictly data-only Win32 `GetFileVersionInfoExW` / icon extraction avoiding `DllMain` execution) upholds `SECURITY.md` rules cleanly.
-- **30-Second Heartbeat Checkpoint:** Updating a lightweight `last_heartbeat_utc` column (or `tracking_checkpoints` singleton row) every 30s in WAL mode bounds crash loss to <= 30s with negligible SSD/CPU impact (~2 writes/min).
+- **30-Second Heartbeat Checkpoint:** Updating `last_checkpoint_utc` and `checkpoint_monotonic_ms` every 30s in WAL mode bounds crash loss to <= 30s with negligible SSD/CPU impact (~2 writes/min).
 
 ## 5. Recommended Decision
 
-### A. Foreground Process & UWP / Elevated Resolution Order
-1. Given valid foreground `HWND`, call `GetWindowThreadProcessId` -> `frame_pid`.
-2. Open with `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, frame_pid)` and read executable image name + `GetProcessTimes` (`process_started_at_utc` for PID reuse protection).
-3. **If process is `ApplicationFrameHost.exe`:** Enumerate child windows via `EnumChildWindows` until finding a child HWND whose `GetWindowThreadProcessId` returns `child_pid != frame_pid`. Re-open `child_pid` with `PROCESS_QUERY_LIMITED_INFORMATION`, then call `GetPackageFamilyName` and `GetApplicationUserModelId` (`appmodel.h`) to obtain Store/UWP package identity.
+### A. Foreground Process & UWP / Elevated Resolution Order (Documented APIs First)
+1. Given valid foreground `HWND`, call documented `GetWindowThreadProcessId` -> `frame_pid`.
+2. Open with documented `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, frame_pid)` and read executable image name (`QueryFullProcessImageNameW`) + `GetProcessTimes` (`process_started_at_utc` for PID reuse protection).
+3. **If process is `ApplicationFrameHost.exe`:** Enumerate child windows via documented `EnumChildWindows` until finding a child HWND whose `GetWindowThreadProcessId` returns `child_pid != frame_pid`. Re-open `child_pid` with `PROCESS_QUERY_LIMITED_INFORMATION`, then call documented `GetPackageFamilyName` and `GetApplicationUserModelId` (`appmodel.h`) to obtain Store/UWP package identity.
 4. **If `OpenProcess` fails with `ERROR_ACCESS_DENIED` (elevated / anti-cheat game):**
-   - Do **not** drop the foreground switch or request UAC elevation.
-   - Query the executable image path via `NtQuerySystemInformation(SystemProcessIdInformation, 0x58)` (normalizing NT device prefix safely) with fallback to `CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)` for executable basename (`szExeFile`).
-   - Record the active session with `classification_state` reflecting partial evidence (never falsely labeling an unverified elevated binary as a game without manifest/curated proof).
+   - Do **not** drop the foreground switch and do **not** request UAC elevation.
+   - **Do NOT use `NtQuerySystemInformation` as a primary dependency.**
+   - Use documented Win32 **`CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)`** (`Process32FirstW` / `Process32NextW` matching `th32ProcessID` -> `szExeFile` basename), with documented **`WTSEnumerateProcessesW`** (`pProcessName`) as an optional secondary documented check if needed.
+   - Record the active session using the resolved executable basename with partial evidence (`classification_state` reflecting available certainty, never falsely labeling an unknown elevated binary as a game without manifest/curated proof).
 
 ### B. Stable App Identity (`stable_app_key`) Precedence & Path Normalization
 Derive deterministic `applications.id` / unique `stable_app_key` using this hierarchy:
@@ -63,12 +67,12 @@ Derive deterministic `applications.id` / unique `stable_app_key` using this hier
 
 ## 6. Decision Status
 
-**Recommended** (ready for Phase 1/2 Rust implementation and adversarial Windows 11 testing).
+**Approved** (Documented Windows APIs constraint: prioritize documented Win32/AppModel APIs and prohibit making `NtQuerySystemInformation` a primary dependency) / **Recommended** (identity key precedence, icon caching, and 30s WAL checkpoints ready for Phase 1/2 validation).
 
 ## 7. Consequences
 
-- **Positive:** Store apps (`ApplicationFrameHost.exe`), elevated tools, anti-cheat protected games, portable folders, and multi-DPI app icons work cleanly without UAC prompts or unsafe EXE execution. Crash losses cap at <= 30s.
-- **Negative / Risk:** `NtQuerySystemInformation(0x58)` is a semi-documented `ntdll` class; keep it strictly isolated inside `platform::windows::process` behind safe error handling and a `Toolhelp32` fallback so any future Windows build change degrades gracefully.
+- **Positive:** Store apps (`ApplicationFrameHost.exe`), elevated tools, anti-cheat protected games, portable folders, and multi-DPI app icons work cleanly using 100% documented Microsoft Windows APIs without UAC prompts, unsafe EXE execution, or undocumented `ntdll` coupling. Crash losses cap at <= 30s.
+- **Negative / Risk:** When `OpenProcess` is denied on an elevated/anti-cheat process, `CreateToolhelp32Snapshot` returns only the basename (`szExeFile`) rather than the full filesystem path or PE version block (mitigated by matching curated rules/manifests and allowing user review/override).
 
 ## 8. Implementation Implications
 

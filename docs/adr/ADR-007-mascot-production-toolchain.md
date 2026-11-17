@@ -1,7 +1,7 @@
-# ADR-007: Autonomous 3D Mascot Production Toolchain & Blockers
+# ADR-007: Autonomous 3D Mascot Production Toolchain & Staged Preparation
 
 **Date:** 2026-11-17  
-**Status:** Blocked (for automated 3D execution pending local Blender installation and paid 3D API credentials/credits; `Recommended` for selected architecture)  
+**Status:** Approved (Owner approved staged preparation — defer headless Blender and 3D generation service setup until entering Phase 5) / Blocked (Phase 5 3D execution remains blocked until Phase 5 prerequisites are installed and provisioned)  
 **Owners:** AI Development Agent (Pipeline Owner), Product Owner (Credentials/Approval)  
 
 ---
@@ -37,14 +37,14 @@ Phase 0 environment inspection on 2026-11-17 must verify which concept-art, 3D-g
    - **Stages 1–2:** Use Antigravity `image-generator` (or Gemini Image API if configured) to create original concept sheets and front/3/4/side/back turnaround.
    - **Stage 3 & Base Rig (Stage 5a):** Prefer **Tripo 3D OpenAPI (Paid commercial tier)** over Meshy due to Tripo's non-humanoid creature rigging and `rig-check` endpoint, only after owner confirms commercial API credentials/credits.
    - **Stages 4, 5b, 6, 7:** Require **headless Blender CLI + Python scripts** (or equivalent verified offline Python/Blender pipeline) to verify topology, rig facial eyes/lids/mouth (since auto-riggers focus on body bones), generate missing expression/blink/look clips, optimize textures, export `mascot.glb`, and write `mascot_manifest.json`.
-2. **Honest Blocker Declaration:** Mark Phase 5 execution **Blocked** until:
-   - Headless Blender (e.g., Blender LTS installed to `Program Files`) is available for agent-driven CLI execution.
-   - Owner supplies/approves a paid 3D generation API key & credit budget (Tripo or chosen alternative) compatible with commercial desktop distribution (`THIRD_PARTY_NOTICES.md` check), OR approves pure procedural/headless Blender Python creature modeling if external 3D APIs are not provisioned.
+2. **Staged Preparation Gate (Approved Owner Plan):**
+   - Headless Blender and 3D generation API services/credits are **intentionally deferred until entering Phase 5 (Mascot Production)** rather than blocking Phase 0–4 development.
+   - When Phase 5 begins, verify: (a) local headless Blender CLI (`blender --version`) for automated mesh/facial-rig refinement, and (b) commercial 3D generation API credentials & credit budget (Tripo Paid tier or approved alternative) compatible with desktop software distribution (`THIRD_PARTY_NOTICES.md`).
 3. **No Silent Substitution:** Never ship static SVG or fake 3D placeholders as the accepted mascot (`MASCOT_SPECIFICATION.md`).
 
 ## 6. Decision Status
 
-**Blocked** (pipeline architecture **Recommended**; execution blocked by absent local `blender.exe` and absent `TRIPO_API_KEY` / paid commercial credits).
+**Approved** (Staged Phase 5 preparation plan; Tripo v3 + headless Blender pipeline **Recommended**) / **Blocked** (Phase 5 3D execution cannot run until Phase 5 prerequisites are installed and provisioned).
 
 ## 7. Consequences
 

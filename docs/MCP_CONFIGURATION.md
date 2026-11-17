@@ -19,9 +19,13 @@ Purpose: browser-based UI validation, accessibility snapshots, and interaction t
 - For live Tauri WebView2 inspection on Windows, pair Playwright UI checks with local loopback WebView2 CDP (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, bound to `127.0.0.1` only).
 - Use only the documented MCP transport/configuration supported by the installed Antigravity environment.
 
-### Session verification note (`ADR-008`, 2026-11-17)
+### Session verification & staged schedule (`ADR-008`, 2026-11-17)
 
-During Phase 0 audit, `Context7`, `Playwright MCP`, and `GitHub MCP` were **not** active in the session `<mcp_servers>` list (while `shadcn`, `magicuidesign-mcp`, and `gemini-api_gemini-api-docs` were present and `Figma MCP` remained excluded). Configure `Context7` and `Playwright MCP` before Phase 0 dependency pinning and Phase 3/4 automated UI QA, or record explicit fallback verification.
+During Phase 0 audit, `Context7`, `Playwright MCP`, and `GitHub MCP` were **not** active in the session `<mcp_servers>` list (while `shadcn`, `magicuidesign-mcp`, and `gemini-api_gemini-api-docs` were present and `Figma MCP` remained excluded). Per the owner-approved staged preparation plan:
+1. Install **Rust stable, Cargo, MSVC Build Tools, and Windows SDK** before Phase 1.
+2. Prepare **Context7 MCP** for documentation lookup during development.
+3. Prepare **Playwright MCP** before UI testing (Phase 3/4).
+4. **GitHub MCP** remains optional; **Figma MCP** remains permanently excluded.
 
 ### Optional: GitHub MCP
 

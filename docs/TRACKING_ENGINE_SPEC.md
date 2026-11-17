@@ -22,9 +22,13 @@ Use `SetWinEventHook` for `EVENT_SYSTEM_FOREGROUND` with an appropriate out-of-c
 
 ### Idle
 
-Use `GetLastInputInfo` to obtain last input tick. Check at a low-frequency interval (initial recommendation: approximately once per second; tune by measurement). Convert tick differences using 32-bit wraparound-safe math (`current_tick32.wrapping_sub(last_input_tick32)`) against `GetTickCount()` to account for the 49.7-day rollover (`ADR-002`). Idle threshold starts at 5 minutes (`300` seconds) as a provisional default and is user-configurable.
+Use documented `GetLastInputInfo` to obtain last input tick. Check at a low-frequency interval (initial recommendation: approximately once per second; tune by measurement). Convert tick differences using 32-bit wraparound-safe math (`current_tick32.wrapping_sub(last_input_tick32)`) against `GetTickCount()` to account for the 49.7-day rollover (`ADR-002`). Idle threshold defaults to 5 minutes (`300` seconds) and is user-configurable via Settings (`TR-010`).
 
-Per `ADR-002` (Provisional; requires owner confirmation on retroactive trade-off), once inactivity crosses the threshold, close the active app session retroactively at `T_cut = max(last_input_time, current_session_started_at)` (avoiding `0 ms` ghost sessions) and persist an `idle_intervals` record starting at `T_cut` with `confirmed_at_utc`. Lock or sleep while `IDLE` immediately closes the open idle interval so locked/sleep duration is never counted as idle.
+Per `ADR-002` (**Approved** forward-cutoff policy):
+- Time prior to idle confirmation remains counted as foreground active usage.
+- Idle starts **exactly when the threshold is confirmed (`T_confirm`)**, never retroactively at `last_input_time`.
+- On confirmation at `T_confirm`, close the open `usage_sessions` row at `ended_at_utc = T_confirm` (with monotonic `duration_ms` up to `T_confirm`) and open an `idle_intervals` row with `started_at_utc = T_confirm`, `confirmed_at_utc = T_confirm`, and `last_input_at_utc = T_input`, guaranteeing zero overlapping duration between active usage and idle intervals.
+- Lock or sleep while `IDLE` immediately closes the open idle interval so locked/sleep duration is never counted as idle.
 
 ### Lock and unlock
 
@@ -47,7 +51,7 @@ States:
 Core transitions:
 - Foreground A -> B: close A; begin B if user is active and session unlocked/awake.
 - Foreground A -> excluded/system/Timo: close A; do not create app usage for excluded surface.
-- Active -> idle threshold crossed: close app session at policy boundary; create idle marker/interval separately.
+- Active -> idle threshold crossed: close app session at idle confirmation time (`T_confirm`, forward cutoff per `ADR-002`); open `idle_intervals` starting at `T_confirm` while storing `last_input_at_utc`.
 - Idle -> input activity: close idle interval; re-query foreground and begin new app session.
 - Any state -> locked: close app/idle interval and enter LOCKED.
 - LOCKED -> unlocked: query foreground; enter TRACKING_APP or IDLE according to last input/policy.
@@ -67,7 +71,7 @@ Core transitions:
 
 ## 6. Debounce and filtering
 
-Foreground hooks can emit noisy or transient changes. Use a small, evidence-based debounce/stability check (initial test window 75–150 ms, provisional) to avoid phantom sessions without losing short app switches. Ignore invalid HWNDs, Timo's own windows, known system shell surfaces when appropriate, and windows with no usable process identity. Do not broadly ignore `ApplicationFrameHost.exe`: unwrap UWP/Microsoft Store child windows via `EnumChildWindows` + `GetPackageFamilyName` / `GetApplicationUserModelId` (`PROCESS_QUERY_LIMITED_INFORMATION`) (`ADR-006`). If `OpenProcess` returns `ERROR_ACCESS_DENIED` on elevated or anti-cheat processes, query image identity safely via `NtQuerySystemInformation(SystemProcessIdInformation)` / `CreateToolhelp32Snapshot` fallback without requesting elevation (`ADR-006`).
+Foreground hooks can emit noisy or transient changes. Use a small, evidence-based debounce/stability check (initial test window 75–150 ms, provisional) to avoid phantom sessions without losing short app switches. Ignore invalid HWNDs, Timo's own windows, known system shell surfaces when appropriate, and windows with no usable process identity. Do not broadly ignore `ApplicationFrameHost.exe`: unwrap UWP/Microsoft Store child windows via documented `EnumChildWindows` + `GetPackageFamilyName` / `GetApplicationUserModelId` (`PROCESS_QUERY_LIMITED_INFORMATION`) (`ADR-006`). If `OpenProcess` returns `ERROR_ACCESS_DENIED` on elevated or anti-cheat processes, prioritize documented Windows APIs (`CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS)` / `WTSEnumerateProcessesW`) to resolve executable basename without requesting elevation; do not make `NtQuerySystemInformation` a primary dependency (`ADR-006`).
 
 ## 7. Passive media caveat
 

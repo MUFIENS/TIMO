@@ -84,12 +84,12 @@ Application Details is a nested detail view reached from Applications or a dashb
 ## 9. Tracking definitions
 
 - **Foreground application:** process that owns the currently active foreground window, after filtering Timo and excluded system surfaces.
-- **Active application usage:** elapsed time while an eligible app is foreground and the inactivity policy says the user is active.
-- **Idle time:** elapsed time after the configured no-input threshold. It is displayed separately and is not added to app usage.
-- **Locked/sleep time:** excluded from active usage. Lock/sleep transitions may appear as timeline markers but no sensitive content is recorded.
+- **Active application usage:** elapsed time while an eligible app is foreground, including time prior to idle threshold confirmation (`ADR-002`).
+- **Idle time:** elapsed time starting exactly when the configured no-input threshold is confirmed (forward cutoff per `ADR-002`). It is displayed separately and never overlaps active app usage.
+- **Locked/sleep time:** excluded from active usage and idle time. Lock/sleep transitions may appear as timeline markers but no sensitive content is recorded.
 - **Daily usage:** sum of eligible active application sessions projected onto the user's local calendar day from canonical UTC sessions (`ADR-001`). Do not add idle, lock, or sleep intervals.
 
-The default idle threshold (5 minutes) is provisional (`ADR-002`). Passive activities such as watching a video or reading can have no keyboard/mouse input and may be considered idle by a simple input-based policy. Make this limitation understandable and allow the user to change the threshold; media-aware detection is not required for v1.
+The default idle threshold (5 minutes, configurable in Settings) uses keyboard/mouse inactivity (`ADR-002` **Approved** forward-cutoff policy). Passive activities such as watching a video or reading can have no keyboard/mouse input and may cross the threshold if no input occurs; make this behavior transparent and easy to configure without inspecting media contents in v1.
 
 ## 10. Application recognition and categorization
 
@@ -103,7 +103,7 @@ Recognition precedence:
 
 Default categories: Productivity, Entertainment, Gaming, Communication, System & Utilities, and Others/Uncategorized. Store application type separately from category where useful (for example, a game launcher versus an actual game). Steam/Epic launcher time must not be substituted for the foreground game's time. Only the foreground process/window is counted.
 
-Do not assume Chrome or any multipurpose application is always productive (`ADR-003`). Recognize known browsers accurately (`app_type = browser`) under a neutral default (`Others / Uncategorized` recommended until owner confirms whether a dedicated web category is desired) and make manual category correction effortless.
+Do not assume Chrome or any multipurpose application is always productive (`ADR-003` **Approved**). Keep the 6 default categories for MVP, recognize known browsers cleanly as `app_type = browser`, default them to `Others / Uncategorized`, and persist manual user category changes.
 
 ## 11. Personalization
 

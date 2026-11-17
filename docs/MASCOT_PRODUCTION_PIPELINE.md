@@ -66,7 +66,7 @@ The AI development agent owns the complete mascot production pipeline. The produ
 As verified in Phase 0 (`ADR-007`, 2026-11-17):
 - **Tripo vs Meshy:** Tripo OpenAPI (`v3.0`, `v3/animations/rig-check`) explicitly supports non-humanoid creature rigs (`quadruped`, `others`, etc.) and `.glb`/`.fbx` output, making it preferred over Meshy's humanoid-focused rigging API (`UE5`/`Unity`/`Mixamo`). However, Tripo's Free plan retains IP with Tripo and requires attribution; commercial desktop distribution requires a **Paid API plan** with prepaid credits (~25 credits/rig, ~10-20 credits/clip). Official reference: https://developers.tripo3d.ai/en/docs/animations-rig
 - **Facial expressions & Blender dependency:** External auto-riggers focus on body bones and do not guarantee eye-blink, gaze, or mouth morph targets (`MASCOT_SPECIFICATION.md`). Headless Blender CLI + Python automation is therefore required for Stage 4 refinement, facial rigging, and GLB validation.
-- **Current host status (Blocked):** As of 2026-11-17, `blender.exe`, `gemini-api` CLI, `TRIPO_API_KEY`, and `MESHY_API_KEY` are absent from the local environment. Phase 5 3D execution remains **Blocked** until Blender CLI and commercial API credentials/credits are provisioned.
+- **Current host status & staged plan (`ADR-007`, Approved Staged Plan):** As of 2026-11-17, `blender.exe`, `gemini-api` CLI, `TRIPO_API_KEY`, and `MESHY_API_KEY` are absent from the local environment. Per the owner-approved staged schedule, headless Blender and external 3D generation tooling are deferred until entering Phase 5 (Mascot Production); Phase 5 3D execution remains **Blocked** until those prerequisites are provisioned.
 
 ## Licensing and secrets
 

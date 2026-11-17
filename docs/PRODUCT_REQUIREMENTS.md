@@ -12,7 +12,7 @@ Priority labels: **P0** release-critical, **P1** important for first release, **
 | TR-002 | P0 | Identify the process associated with the foreground window. | Store stable app identity and session process metadata; PID reuse is not treated as the same process instance. |
 | TR-003 | P0 | Start/stop app usage sessions on foreground changes. | Previous session closes at transition time; next eligible app begins without overlap. |
 | TR-004 | P0 | Do not count background processes. | An app left running behind another window accrues no usage duration. |
-| TR-005 | P0 | Detect idle based on last input time (`ADR-002`). | At configured threshold, active app usage closes cleanly per `ADR-002` policy boundary and an idle interval is recorded separately. |
+| TR-005 | P0 | Detect idle via forward cutoff at threshold confirmation (`ADR-002`). | Default 5-minute threshold (configurable in Settings); active usage closes and idle starts exactly when threshold confirms, persisting `last_input_at_utc` and `confirmed_at_utc` with zero active/idle overlap. |
 | TR-006 | P0 | Detect lock/unlock. | Lock ends active app or idle interval immediately; unlock starts a fresh eligible session after foreground state is re-evaluated. |
 | TR-007 | P0 | Detect suspend/resume. | Suspend closes/flushes current app or idle interval; resume reinitializes state and does not count sleep time. |
 | TR-008 | P0 | Handle app exit and Timo shutdown (`ADR-006`). | Current session is finalized or safely recovered at last reliable checkpoint; no unbounded open intervals. |
@@ -28,9 +28,9 @@ Priority labels: **P0** release-critical, **P1** important for first release, **
 | AR-002 | P0 | Read available executable metadata (`ADR-006`). | Product name, file description, company/publisher, version, and path are read defensively without executing untrusted binaries. |
 | AR-003 | P0 | Support standalone EXE applications (`ADR-006`). | An executable launched directly can be recorded even when no installer/launcher metadata exists. |
 | AR-004 | P0 | Distinguish launchers from launched apps/games. | Foreground game process is tracked; background Steam/Epic launcher is not credited with game time. |
-| AR-005 | P1 | Recognize packaged Windows apps (`ADR-006`). | Resolve `ApplicationFrameHost.exe` child HWNDs and read Package Family Name / AUMID evidence when accessible. |
+| AR-005 | P1 | Recognize packaged Windows apps (`ADR-006`). | Resolve `ApplicationFrameHost.exe` child HWNDs and read Package Family Name / AUMID via documented Windows APIs when accessible. |
 | AR-006 | P1 | Use platform manifests when available. | Steam/Epic identification enriches metadata without requiring launcher process time to be counted. |
-| AR-007 | P0 | Categorize with evidence and confidence (`ADR-003`). | Rule provenance and confidence state are available for user review; known browsers use neutral default category rather than assuming Productivity. |
+| AR-007 | P0 | Categorize with evidence and confidence (`ADR-003`). | Retain 6 MVP categories; known browsers (`app_type = browser`) default neutrally to `Others / Uncategorized` (never assumed Productivity), and provenance/confidence remain reviewable. |
 | AR-008 | P0 | Support manual category correction. | User override takes precedence over future automatic rules. |
 | AR-009 | P0 | Provide unknown/review state. | Low-confidence apps are not presented as definitively classified. |
 | AR-010 | P1 | Merge app instances safely. | Multiple windows/process instances of the same app aggregate to the intended application record while session boundaries remain correct. |

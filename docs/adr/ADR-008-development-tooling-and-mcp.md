@@ -1,7 +1,7 @@
-# ADR-008: Development Toolchain, Native Prerequisites & MCP Availability
+# ADR-008: Development Toolchain, Staged Prerequisites & MCP Availability
 
 **Date:** 2026-11-17  
-**Status:** Approved (Policy) / Blocked (Missing Rust toolchain & missing Context7/Playwright MCPs in current session)  
+**Status:** Approved (Owner approved staged preparation sequence & Figma MCP exclusion) / Blocked (Phase 1 compilation requires installing Rust/Cargo/MSVC/Windows SDK; Context7 & Playwright MCPs pending setup per stage)  
 **Owners:** Release Engineering, AI Agent Operations  
 
 ---
@@ -44,15 +44,25 @@ Phase 0 audit on 2026-11-17 revealed a gap between required blueprint tooling an
 
 ## 5. Recommended Decision
 
-1. **Phase 0 Prerequisites Before Scaffolding Tauri:**
-   - Install Rust (`rustup`, stable MSVC toolchain), Microsoft Visual Studio C++ Build Tools + Windows 11 SDK, and confirm Microsoft Edge WebView2 Evergreen Runtime on the Windows 11 host.
-   - Configure **Context7 MCP** and **Playwright MCP** in Antigravity per `MCP_CONFIGURATION.md` (or record owner approval to rely on official docs + local Playwright NPM runner + WebView2 CDP `--remote-debugging-port=9222` per `impeccable` `audit.md`).
-2. **Browser / WebView2 Policy (`modern-web-guidance`):** Document in `AGENTS.md` that Timo targets **Windows 11 Evergreen Edge WebView2 (Chromium)**, allowing modern Baseline Widely Available CSS/DOM features (`:focus-visible`, CSS Grid, `@starting-style` with fallback checks) without legacy IE/Safari polyfills.
-3. **Never Enable Figma MCP:** Preserve the strict exclusion from `MCP_CONFIGURATION.md`.
+Adopt the **Owner-Approved Staged Preparation Plan**:
+1. **Before Phase 1 (Mandatory Native Prerequisites):**
+   - Install **Rust stable (`rustup`)**, **Cargo**, **Microsoft Visual Studio C++ Build Tools**, and **Windows 11 SDK**, and confirm Edge WebView2 Evergreen Runtime on the Windows 11 host before creating the Tauri skeleton and running `cargo test`.
+2. **During Development (Phase 0/1+):**
+   - Configure **Context7 MCP** to verify up-to-date Tauri 2, Rust crate, React, Tailwind, Motion, Recharts, and Three.js/R3F APIs during implementation.
+3. **Before UI Testing (Phase 3/4):**
+   - Configure **Playwright MCP** before running browser/DOM accessibility and layout verification (paired with Windows loopback WebView2 CDP `--remote-debugging-port=9222` per `impeccable` `audit.md`, alongside native Windows integration tests).
+4. **Optional Integration:**
+   - **GitHub MCP** remains optional (local `git` CLI is already installed).
+5. **Phase 5 Mascot Stage (`ADR-007`):**
+   - Prepare **headless Blender** and a **3D generation service** only when entering Phase 5 Mascot production.
+6. **Permanent Exclusion:**
+   - **Figma MCP remains excluded** and must not be added or enabled.
+7. **Browser / WebView2 Policy (`modern-web-guidance`):**
+   - Document in `AGENTS.md` that Timo targets **Windows 11 Evergreen Edge WebView2 (Chromium)**, allowing modern Baseline Widely Available CSS/DOM features without legacy browser polyfills.
 
 ## 6. Decision Status
 
-**Approved** (MCP exclusion & workflow policy) / **Blocked** (Phase 0 scaffolding cannot compile or run until `rustc`/`cargo` + MSVC Build Tools are installed; Context7/Playwright MCPs remain unavailable in current session).
+**Approved** (Owner-approved staged preparation sequence, optional GitHub MCP, and permanent Figma MCP exclusion) / **Blocked** (Phase 1 Rust/Tauri compilation blocked until Rust stable, Cargo, MSVC Build Tools, and Windows SDK are installed; Context7 & Playwright MCPs pending setup in their respective stages).
 
 ## 7. Consequences
 

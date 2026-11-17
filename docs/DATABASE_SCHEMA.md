@@ -60,13 +60,14 @@ Per `ADR-001`, daily and midnight-crossing segments are **derived deterministica
 
 ### `idle_intervals` (`ADR-002`, `ADR-006`)
 
-Dedicated intervals for confirmed idle periods, kept strictly distinct from active application usage:
+Dedicated intervals for confirmed idle periods (forward cutoff per `ADR-002` **Approved** policy), kept strictly non-overlapping with `usage_sessions`:
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | TEXT primary key | UUID |
-| `started_at_utc` | TEXT | Effective idle start (`max(last_input_time, prior_session_start)`) |
+| `started_at_utc` | TEXT | Effective idle start (`== confirmed_at_utc`; equals prior session `ended_at_utc`) |
 | `confirmed_at_utc` | TEXT | UTC timestamp when threshold was crossed |
+| `last_input_at_utc` | TEXT | Last reliable input timestamp prior to idle confirmation |
 | `ended_at_utc` | TEXT nullable | Null while currently `IDLE` |
 | `duration_ms` | INTEGER | Monotonic idle duration on close (`>= 0`) |
 | `end_reason` | TEXT nullable | `user_input`, `locked`, `suspended`, `tracking_paused`, `app_exit`, `crash_recovery` |
